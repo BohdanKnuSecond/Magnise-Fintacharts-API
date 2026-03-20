@@ -1,0 +1,6 @@
+@MagniseTest.Api_HostAddress = http://localhost:5143
+
+GET {{MagniseTest.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
