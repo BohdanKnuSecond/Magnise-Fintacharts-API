@@ -3,44 +3,52 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHttpClient<MagniseTest.Application.Interfaces.IFintachartsAuthService, MagniseTest.Infrastructure.Fintacharts.FintachartsAuthService>();
+builder.Services.AddHttpClient<MagniseTest.Application.Interfaces.IFintachartsInstrumentService, MagniseTest.Infrastructure.Fintacharts.FintachartsInstrumentService>();
 builder.Services.AddControllers();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var instrumentService = scope.ServiceProvider.GetRequiredService<MagniseTest.Application.Interfaces.IFintachartsInstrumentService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    if (!dbContext.Assets.Any())
+    {
+        logger.LogInformation("Database is empty. Starting to fetch assets from Fintacharts...");
+
+        try
+        {
+            var assets = await instrumentService.GetInstrumentsAsync();
+            if (assets.Any())
+            {
+                dbContext.Assets.AddRange(assets);
+                await dbContext.SaveChangesAsync();
+                logger.LogInformation("Successfully saved {Count} assets to the database!", assets.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred while fetching assets from Fintacharts.");
+        }
+    }
+    else
+    {
+        logger.LogInformation("Assets already exist in the database. Skipping fetch.");
+    }
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
