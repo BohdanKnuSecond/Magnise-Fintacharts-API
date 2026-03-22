@@ -1,4 +1,6 @@
+using MagniseTest.Application.Interfaces;
 using MagniseTest.Infrastructure.Data;
+using MagniseTest.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +10,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpClient<MagniseTest.Application.Interfaces.IFintachartsAuthService, MagniseTest.Infrastructure.Fintacharts.FintachartsAuthService>();
 builder.Services.AddHttpClient<MagniseTest.Application.Interfaces.IFintachartsInstrumentService, MagniseTest.Infrastructure.Fintacharts.FintachartsInstrumentService>();
+builder.Services.AddScoped<IAssetRepository, AssetRepository>();
+builder.Services.AddSingleton<MagniseTest.Application.Interfaces.IPriceStorage, MagniseTest.Infrastructure.Services.PriceStorage>();
 builder.Services.AddControllers();
 
 var app = builder.Build();
