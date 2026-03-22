@@ -12,6 +12,7 @@ builder.Services.AddHttpClient<MagniseTest.Application.Interfaces.IFintachartsAu
 builder.Services.AddHttpClient<MagniseTest.Application.Interfaces.IFintachartsInstrumentService, MagniseTest.Infrastructure.Fintacharts.FintachartsInstrumentService>();
 builder.Services.AddScoped<IAssetRepository, AssetRepository>();
 builder.Services.AddSingleton<MagniseTest.Application.Interfaces.IPriceStorage, MagniseTest.Infrastructure.Services.PriceStorage>();
+builder.Services.AddHostedService<MagniseTest.Infrastructure.WebSockets.FintachartsWebSocketService>();
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -22,9 +23,11 @@ using (var scope = app.Services.CreateScope())
     var instrumentService = scope.ServiceProvider.GetRequiredService<MagniseTest.Application.Interfaces.IFintachartsInstrumentService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
+    dbContext.Database.EnsureCreated();
+
     if (!dbContext.Assets.Any())
     {
-        logger.LogInformation("Database is empty. Starting to fetch assets from Fintacharts...");
+        logger.LogInformation("Database is empty");
 
         try
         {
@@ -33,17 +36,17 @@ using (var scope = app.Services.CreateScope())
             {
                 dbContext.Assets.AddRange(assets);
                 await dbContext.SaveChangesAsync();
-                logger.LogInformation("Successfully saved {Count} assets to the database!", assets.Count);
+                logger.LogInformation("Successfully saved {Count} assets to the database", assets.Count);
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error occurred while fetching assets from Fintacharts.");
+            logger.LogError(ex, "Error occurred while fetching assets from Fintacharts");
         }
     }
     else
     {
-        logger.LogInformation("Assets already exist in the database. Skipping fetch.");
+        logger.LogInformation("Assets already exist in the database");
     }
 }
 

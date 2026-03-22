@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using MagniseTest.Application.Interfaces;
 using MagniseTest.Domain.Entities;
 
@@ -30,7 +28,7 @@ namespace MagniseTest.Infrastructure.Fintacharts
 
             var response = await _httpClient.GetAsync("https://platform.fintacharts.com/api/instruments/v1/instruments?provider=oanda&kind=forex");
 
-            response.EnsureSuccessStatusCode(); 
+            response.EnsureSuccessStatusCode();
 
             var data = await response.Content.ReadFromJsonAsync<FintachartsInstrumentsResponse>();
 
@@ -41,25 +39,28 @@ namespace MagniseTest.Infrastructure.Fintacharts
             {
                 assets.Add(new Asset
                 {
-                    Id = Guid.NewGuid(), 
+                    Id = item.Id,               
                     Symbol = item.Symbol,
-                    Description = item.Description
+                    Description = item.Description,
+                    Provider = "oanda",         
+                    Kind = "forex"         
                 });
             }
 
             return assets;
         }
 
-      
         private class FintachartsInstrumentsResponse
         {
             [JsonPropertyName("data")]
             public List<FintachartsInstrumentDto>? Data { get; set; }
         }
 
-       
         private class FintachartsInstrumentDto
         {
+            [JsonPropertyName("id")]            
+            public Guid Id { get; set; }
+
             [JsonPropertyName("symbol")]
             public string Symbol { get; set; } = string.Empty;
 
