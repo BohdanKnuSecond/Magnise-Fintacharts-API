@@ -1,7 +1,7 @@
 
 
 Market Assets API (Magnise Test Task)
-This is a .NET 8 REST API built to fetch and serve market asset prices. It uses the Fintacharts platform under the hood, pulling historical data via their REST API and listening for real-time price updates through WebSockets.
+This is a .NET 9 REST API built to fetch and serve market asset prices. It uses the Fintacharts platform under the hood, pulling historical data via their REST API and listening for real-time price updates through WebSockets.
 
 The project is structured using Clean Architecture principles (Api, Application, Domain, Infrastructure). For the database, I went with SQLite to make it easy to review and run. You don't need to set up any external SQL servers or run manual migrations — the database is automatically created and seeded with supported assets from Fintacharts the very first time you start the app.
 
