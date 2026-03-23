@@ -28,6 +28,9 @@ namespace MagniseTest.Api.Controllers
         [HttpGet("realtime")]
         public IActionResult GetRealTimePrice([FromQuery] string symbol)
         {
+            if (string.IsNullOrWhiteSpace(symbol))
+                return BadRequest("Symbol is required.");
+
             var data = _priceStorage.GetPrice(symbol.ToUpper());
 
             if (data == null)
@@ -43,20 +46,24 @@ namespace MagniseTest.Api.Controllers
             });
         }
 
-     
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory([FromQuery] string symbol, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
+            if (string.IsNullOrWhiteSpace(symbol))
+                return BadRequest("Symbol is required.");
+
+            if (from > to)
+                return BadRequest("Invalid date range.");
+            if (from > DateTime.UtcNow || to > DateTime.UtcNow) return BadRequest("Dates cannot be in the future.");
+
             try
             {
-               
                 var assets = await _assetRepository.GetAllAssetsAsync();
                 var asset = assets.FirstOrDefault(a => a.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
 
                 if (asset == null)
                     return NotFound($"Asset '{symbol}' not found in the database.");
 
-               
                 var token = await _authService.GetAccessTokenAsync();
                 if (string.IsNullOrEmpty(token))
                     return StatusCode(500, "Failed to get access token from Fintacharts.");
@@ -70,7 +77,6 @@ namespace MagniseTest.Api.Controllers
                           $"periodicity=day&" +
                           $"startDate={from:yyyy-MM-dd}&" +
                           $"endDate={to:yyyy-MM-dd}";
-
 
                 var client = _httpClientFactory.CreateClient();
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -87,7 +93,6 @@ namespace MagniseTest.Api.Controllers
             }
             catch (Exception ex)
             {
-           
                 return StatusCode(500, $"Server Crash Details: {ex.Message} \n {ex.StackTrace}");
             }
         }

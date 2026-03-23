@@ -52,6 +52,8 @@ namespace MagniseTest.Infrastructure.WebSockets
             if (string.IsNullOrEmpty(token)) return;
 
             using var ws = new ClientWebSocket();
+            ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+
             var uri = new Uri($"wss://platform.fintacharts.com/api/streaming/ws/v1/realtime?token={token}");
 
             await ws.ConnectAsync(uri, stoppingToken);
